@@ -205,7 +205,7 @@ cd CavSulit
 git init
 ```
 
-### Step 2 — Create a .gitignore file in the root
+### Step 2 — Create a .gitignore file in the root//
 Create a file called `.gitignore` and paste this:
 ```
 # Backend
@@ -236,14 +236,14 @@ git push -u origin main
 | Layer       | Technology                          |
 |-------------|-------------------------------------|
 | Frontend    | React 18 + TypeScript + Vite        |
-<!--| Styling     | Tailwind CSS + Outfit + Plus Jakarta Sans |-->
+| Styling     | Tailwind CSS + Outfit + Plus Jakarta Sans |
 | Routing     | React Router v6                     |
 | HTTP Client | Axios                               |
 | Backend     | Node.js + Express                   |
 | Database    | MySQL + Sequelize ORM               |
 | Auth        | JWT + bcryptjs                      |
 | Real-time   | Socket.io (messaging)               |
-<!--| Uploads     | Multer (local /uploads folder)      |-->
+| Uploads     | Multer (local /uploads folder)      |
 
 ---
 
