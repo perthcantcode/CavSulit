@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: 'https://cavsulit-production.up.railway.app/api' });
+const api = axios.create({ baseURL: 'https://cavsulit-backend.onrender.com/api' });
 
 api.interceptors.request.use(cfg => {
   const token = localStorage.getItem('cavsulit_token');
