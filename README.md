@@ -2,9 +2,9 @@
 **ITEC Group 3 · Cavite State University**
 
 > *"The campus is your market. CavSulit is your store."*
-
----
 <!--
+---
+
 ## 📁 Folder Structure
 
 ```
