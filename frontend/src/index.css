@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@layer base {
+  body {
+    @apply bg-cav-bg text-cav-text-dark font-sans antialiased;
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-attachment: fixed;
+  }
+  h1,h2,h3,h4,h5,h6 { @apply font-display; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-cav-green text-white px-5 py-2.5 rounded-xl font-semibold text-sm
+           hover:bg-cav-green-dark transition-all duration-200 inline-flex items-center gap-2;
+  }
+  .btn-secondary {
+    @apply bg-white text-cav-green border border-cav-green-accent px-5 py-2.5 rounded-xl
+           font-semibold text-sm hover:bg-cav-green-accent/10 transition-all duration-200
+           inline-flex items-center gap-2;
+  }
+  .btn-ghost {
+    @apply text-cav-text-muted hover:text-cav-green hover:bg-cav-green-accent/10
+           px-3 py-2 rounded-lg transition-all duration-200 inline-flex items-center gap-2;
+  }
+  .card {
+    @apply bg-white rounded-2xl border border-cav-green-accent/20 shadow-sm
+           hover:shadow-md transition-all duration-200;
+  }
+  .input {
+    @apply w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm
+           focus:outline-none focus:ring-2 focus:ring-cav-green-accent/50 focus:border-cav-green-accent
+           placeholder:text-gray-400 transition-all duration-200;
+  }
+  .badge-cvsu {
+    @apply inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg
+           bg-gradient-to-r from-cav-green-dark to-cav-green text-white shadow-sm;
+  }
+  .badge-trusted {
+    @apply inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg
+           bg-gradient-to-r from-gray-500 to-gray-400 text-white;
+  }
+  .badge-top {
+    @apply inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg
+           bg-gradient-to-r from-yellow-600 to-yellow-400 text-white;
+  }
+  .pill {
+    @apply px-4 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 cursor-pointer;
+  }
+  .pill-active {
+    @apply bg-cav-green text-white border-cav-green;
+  }
+  .pill-inactive {
+    @apply bg-white text-cav-green border-cav-green-accent/40 hover:border-cav-green hover:bg-cav-green-accent/10;
+  }
+  .section-tag {
+    @apply inline-block bg-cav-green-accent/20 text-cav-green font-bold text-xs
+           px-3 py-1 rounded-full uppercase tracking-wide mb-2;
+  }
+  .page-container {
+    @apply max-w-6xl mx-auto px-4 sm:px-6 py-8;
+  }
+}
