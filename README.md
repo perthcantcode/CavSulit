@@ -4,7 +4,7 @@
 > *"The campus is your market. CavSulit is your store."*
 
 ---
-/*
+<!--
 ## 📁 Folder Structure
 
 ```
@@ -228,7 +228,7 @@ git push -u origin main
 ```
 
 > ⚠️ Never push `.env` — it contains your database password!
-
+-->
 ---
 
 ## 🧩 Tech Stack
