@@ -133,10 +133,10 @@ export function Register() {
               </button>
             </div>
           </div>
-            <label className="block text-xs font-bold text-cav-green-dark mb-1">Student ID</label>
           <div>
+            <label className="block text-xs font-bold text-cav-green-dark mb-1">Student ID</label>
             <input value={form.studentId} onChange={e=>setForm({...form,studentId:e.target.value})}
-              placeholder="251XXXXXX" className="input"/>
+              placeholder="2021-XXXXX" className="input"/>
           </div>
           <div>
             <label className="block text-xs font-bold text-cav-green-dark mb-1">Department</label>
