@@ -4,7 +4,7 @@
 > *"The campus is your market. CavSulit is your store."*
 
 ---
-
+/*
 ## 📁 Folder Structure
 
 ```
@@ -58,7 +58,7 @@ CavSulit/
     ├── vite.config.ts
     └── package.json
 ```
-
+*/
 ---
 
 ## 🗄️ DATABASE SETUP (Step-by-step)
