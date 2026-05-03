@@ -45,7 +45,7 @@ export function Landing() {
             🎓 For every CvSU entrepreneur
           </div>
           <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-800 text-white mb-4 leading-tight">
-            Your campus has more<br/><span className="text-cav-green-vibrant">to offer than you think.</span>
+            You've got the hustle<br/><span className="text-cav-green-vibrant">we've got the platform</span>
           </h1>
           <p className="text-white/80 text-base sm:text-lg max-w-2xl mx-auto mb-8">
             CavSulit is a free campus marketplace where students, instructors, and CvSU
