@@ -66,7 +66,7 @@ export function Landing() {
           </form>
 
           <div className="flex items-center justify-center gap-8 text-white/80">
-            {[['42+','Active Shops'],['300+','Community'],['Free','Always']].map(([n,l])=>(
+            {[['42+','Active Shops'],['30+','Community'],['Free','Always']].map(([n,l])=>(
               <div key={l} className="text-center">
                 <div className="font-display font-bold text-2xl text-white">{n}</div>
                 <div className="text-xs">{l}</div>
