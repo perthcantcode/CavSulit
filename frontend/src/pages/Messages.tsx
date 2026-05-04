@@ -97,7 +97,7 @@ export function Messages() {
 
   return (
     <div className="page-container !py-0 !px-0 max-w-none">
-      <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+      <div className="flex h-[calc(100vh-128px)] overflow-hidden">
 
         {/* Sidebar */}
         <div className={`${activePartner?'hidden md:flex':'flex'} flex-col w-full md:w-72 border-r border-gray-100 bg-white`}>

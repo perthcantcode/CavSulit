@@ -104,7 +104,7 @@ export function Layout() {
         )}
       </nav>
 
-      <main className="flex-1"><Outlet /></main>
+      <main className="flex-1 min-h-0"><Outlet /></main>
 
       <footer className="bg-cav-green-dark text-white/80 py-8 mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
