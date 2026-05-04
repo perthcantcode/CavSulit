@@ -63,7 +63,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
 router.post('/', protect, upload.array('photos', 5), async (req, res) => {
   try {
     const { name, description, category, college, locationDesc, lat, lng, availableDate } = req.body;
-    const photos = req.files ? req.files.map(f => `/uploads/${f.filename}`) : [];
+    const photos = req.files ? req.files.map(f => f.path) : [];
     const shop = await Shop.create({ userId: req.user.id, name, description, category: category||'other', college: college||'Other', locationDesc, lat: lat||null, lng: lng||null, photos, availableDate: availableDate||null });
     res.status(201).json(shop);
   } catch (err) { res.status(500).json({ message: err.message }); }
@@ -76,7 +76,7 @@ router.put('/:id', protect, upload.array('photos', 5), async (req, res) => {
     if (!shop) return res.status(404).json({ message: 'Not found' });
     if (shop.userId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
     const updates = { ...req.body };
-    if (req.files?.length) updates.photos = req.files.map(f => `/uploads/${f.filename}`);
+    if (req.files?.length) updates.photos = req.files.map(f => f.path);
     await shop.update(updates);
     res.json(shop);
   } catch (err) { res.status(500).json({ message: err.message }); }
