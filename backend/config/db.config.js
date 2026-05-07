@@ -19,6 +19,9 @@ const sequelize = new Sequelize(
     },
     dialectOptions: {
       connectTimeout: 60000,
+      ssl: {
+        rejectUnauthorized: false
+      }
     },
   }
 );
