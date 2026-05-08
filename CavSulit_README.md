@@ -59,7 +59,7 @@ The platform covers the core functions of:
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18 + TypeScript + Vite |
+| Frontend | Javascript + React + Typescript |
 | Styling | Tailwind CSS + Outfit + Plus Jakarta Sans (Google Fonts) |
 | Routing | React Router v6 |
 | HTTP Client | Axios |
