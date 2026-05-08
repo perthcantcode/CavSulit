@@ -29,7 +29,7 @@ router.get('/shop/:shopId', protect, async (req, res) => {
     const shop = await Shop.findByPk(req.params.shopId);
     if (!shop || shop.userId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
     const orders = await PreOrder.findAll({
-      where: { shopId: req.params.shopId },
+      where: { shopId: String(req.params.shopId) },
       include: [{ model: User, as: 'buyer', attributes: ['id','fullName','contactNumber','department'] }],
       order: [['createdAt','DESC']],
     });

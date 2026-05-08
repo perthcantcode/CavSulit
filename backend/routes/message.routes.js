@@ -35,8 +35,8 @@ router.get('/:partnerId', protect, async (req, res) => {
     const msgs = await Message.findAll({
       where: {
         [Op.or]: [
-          { senderId: req.user.id,        receiverId: req.params.partnerId },
-          { senderId: req.params.partnerId, receiverId: req.user.id },
+          { senderId: String(req.user.id),    receiverId: String(req.params.partnerId) },
+          { senderId: String(req.params.partnerId), receiverId: String(req.user.id) },
         ],
       },
       order: [['createdAt','ASC']],

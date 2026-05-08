@@ -22,11 +22,11 @@ router.get('/:shopId', protect, async (req, res) => {
     const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     const [totalViews, totalClicks, totalMessages, weekly] = await Promise.all([
-      Analytics.count({ where: { shopId: req.params.shopId, type: 'view' } }),
-      Analytics.count({ where: { shopId: req.params.shopId, type: 'click' } }),
-      Analytics.count({ where: { shopId: req.params.shopId, type: 'message' } }),
+      Analytics.count({ where: { shopId: String(req.params.shopId), type: 'view' } }),
+      Analytics.count({ where: { shopId: String(req.params.shopId), type: 'click' } }),
+      Analytics.count({ where: { shopId: String(req.params.shopId), type: 'message' } }),
       Analytics.findAll({
-        where: { shopId: req.params.shopId, type: 'view', date: { [Op.gte]: sevenDaysAgo } },
+        where: { shopId: String(req.params.shopId), type: 'view', date: { [Op.gte]: sevenDaysAgo } },
         attributes: ['date', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
         group: ['date'],
         order: [['date','ASC']],

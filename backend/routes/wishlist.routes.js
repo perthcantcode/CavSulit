@@ -24,7 +24,7 @@ router.get('/', protect, async (req, res) => {
 // POST /api/wishlist/:shopId  — toggle
 router.post('/:shopId', protect, async (req, res) => {
   try {
-    const existing = await Wishlist.findOne({ where: { userId: req.user.id, shopId: req.params.shopId } });
+    const existing = await Wishlist.findOne({ where: { userId: String(req.user.id), shopId: String(req.params.shopId) } });
     if (existing) {
       await existing.destroy();
       return res.json({ saved: false });

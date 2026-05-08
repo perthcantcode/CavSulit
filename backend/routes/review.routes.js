@@ -6,7 +6,7 @@ const { protect } = require('../middleware/auth');
 router.get('/:shopId', async (req, res) => {
   try {
     const reviews = await Review.findAll({
-      where: { shopId: req.params.shopId },
+      where: { shopId: String(req.params.shopId) },
       include: [{ model: User, as: 'reviewer', attributes: ['id','fullName','department','profilePhoto'] }],
       order: [['createdAt','DESC']],
     });
