@@ -7,19 +7,18 @@ const sequelize = new Sequelize(
   process.env.DB_PASS,
   {
     host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT) || 3306,
-    dialect: 'mysql',
+    port: parseInt(process.env.DB_PORT) || 5432,
+    dialect: 'postgres',
     logging: false,
     pool: {
       max: 5,
       min: 0,
       acquire: 60000,
       idle: 10000,
-      evict: 10000,
     },
     dialectOptions: {
-      connectTimeout: 60000,
       ssl: {
+        require: true,
         rejectUnauthorized: false
       }
     },
@@ -27,7 +26,7 @@ const sequelize = new Sequelize(
 );
 
 sequelize.authenticate()
-  .then(() => console.log('✅ MySQL connected'))
+  .then(() => console.log('✅ PostgreSQL connected'))
   .catch(err => console.error('❌ DB error:', err.message));
 
 module.exports = { sequelize };
