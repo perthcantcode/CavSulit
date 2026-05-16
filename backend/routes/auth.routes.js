@@ -2,7 +2,7 @@ const router  = require('express').Router();
 const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const { User } = require('../models');
-const { protect } = require('../middleware/auth');
+const { protect, requireCvsu } = require('../middleware/auth');
 
 const sign = u => jwt.sign({ id: u.id, email: u.email, role: u.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
 const safe = u => ({ id: u.id, fullName: u.fullName, email: u.email, studentId: u.studentId, department: u.department, contactNumber: u.contactNumber, profilePhoto: u.profilePhoto, badgeLevel: u.badgeLevel, isVerified: u.isVerified, role: u.role });

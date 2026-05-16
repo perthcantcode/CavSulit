@@ -1,23 +1,38 @@
-const jwt = require('jsonwebtoken');
+const admin = require('../config/firebase.config');
+const { User } = require('../models');
 
-const protect = (req, res, next) => {
-  const auth = req.headers.authorization;
-  if (!auth?.startsWith('Bearer '))
-    return res.status(401).json({ message: 'No token provided' });
+const protect = async (req, res, next) => {
   try {
-    req.user = jwt.verify(auth.split(' ')[1], process.env.JWT_SECRET);
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'No token' });
+
+    const decoded = await admin.auth().verifyIdToken(token);
+    const email = decoded.email;
+    const isCvsu = email?.endsWith('@cvsu.edu.ph');
+
+    let user = await User.findOne({ where: { email } });
+    if (!user) {
+      user = await User.create({
+        id: decoded.uid,
+        email,
+        fullName: decoded.name || email.split('@')[0],
+        badgeLevel: isCvsu ? 'cvsu' : 'none',
+        isCvsuVerified: isCvsu,
+      });
+    }
+
+    req.user = user;
     next();
-  } catch {
-    res.status(401).json({ message: 'Invalid or expired token' });
+  } catch (err) {
+    res.status(401).json({ message: 'Invalid token' });
   }
 };
 
-const optionalAuth = (req, res, next) => {
-  const auth = req.headers.authorization;
-  if (auth?.startsWith('Bearer ')) {
-    try { req.user = jwt.verify(auth.split(' ')[1], process.env.JWT_SECRET); } catch {}
+const requireCvsu = (req, res, next) => {
+  if (!req.user?.isCvsuVerified) {
+    return res.status(403).json({ message: 'CvSU email required to post shops' });
   }
   next();
 };
 
-module.exports = { protect, optionalAuth };
+module.exports = { protect, requireCvsu };

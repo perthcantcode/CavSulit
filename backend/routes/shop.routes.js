@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const { Op }  = require('sequelize');
 const { Shop, Product, User, Review } = require('../models');
-const { protect, optionalAuth } = require('../middleware/auth');
+const { protect, optionalAuth, requireCvsu } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
 // GET /api/shops  — browse + filter
@@ -60,8 +60,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
 });
 
 // POST /api/shops
-router.post('/', protect, upload.array('photos', 5), async (req, res) => {
-  try {
+router.post('/', protect, requireCvsu, upload.array('photos', 5), async (req, res) => {  try {
     const { name, description, category, college, locationDesc, lat, lng, availableDate } = req.body;
     const photos = req.files ? req.files.map(f => f.path) : [];
     const shop = await Shop.create({ userId: req.user.id, name, description, category: category||'other', college: college||'Other', locationDesc, lat: lat||null, lng: lng||null, photos, availableDate: availableDate||null });
