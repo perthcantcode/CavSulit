@@ -8,7 +8,7 @@ const protect = async (req, res, next) => {
 
     const decoded = await admin.auth().verifyIdToken(token);
     const email = decoded.email;
-    const isCvsu = email?.endsWith('@cvsu.edu.ph');
+const isCvsu = email?.endsWith('@cvsu.edu.ph') && decoded.email_verified;
 
     let user = await User.findOne({ where: { email } });
     if (!user) {
