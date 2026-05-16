@@ -4,10 +4,20 @@ import { ShoppingBag, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { DEPARTMENTS } from '../utils/helpers';
 
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 48 48">
+      <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+      <path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+      <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+      <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+    </svg>
+  );
+}
+
 function AuthLayout({ title, sub, children }) {
   return (
     <div className="min-h-screen flex">
-      {/* Left panel */}
       <div className="hidden lg:flex flex-col justify-between w-96 bg-gradient-to-br from-cav-green-dark to-cav-green p-10 text-white flex-shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
@@ -25,7 +35,6 @@ function AuthLayout({ title, sub, children }) {
         </div>
         <div className="text-white/40 text-xs">© 2026 CavSulit · ITEC Group 3</div>
       </div>
-      {/* Right panel */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
@@ -42,12 +51,13 @@ function AuthLayout({ title, sub, children }) {
 }
 
 export function Login() {
-  const { login }  = useAuth();
-  const navigate   = useNavigate();
+  const { login, loginWithGoogle } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const submit = async (e) => {
     e.preventDefault();
@@ -57,15 +67,41 @@ export function Login() {
       await login(form.email, form.password);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.message || 'Login failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setError('');
+    setGoogleLoading(true);
+    try {
+      await loginWithGoogle();
+      navigate('/');
+    } catch (err) {
+      setError(err.message || 'Google sign-in failed');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
   return (
     <AuthLayout title="Welcome back" sub="Sign in to your CavSulit account">
       {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 mb-4">{error}</div>}
+      
+      <button onClick={handleGoogle} disabled={googleLoading}
+        className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition mb-4">
+        <GoogleIcon/>
+        {googleLoading ? 'Signing in...' : 'Continue with Google'}
+      </button>
+
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex-1 h-px bg-gray-200"/>
+        <span className="text-xs text-gray-400">or</span>
+        <div className="flex-1 h-px bg-gray-200"/>
+      </div>
+
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="block text-xs font-bold text-cav-green-dark mb-1">Email</label>
@@ -95,21 +131,27 @@ export function Login() {
 
 export function Register() {
   const { register } = useAuth();
-  const navigate     = useNavigate();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ fullName: '', email: '', password: '', studentId: '', department: 'OTHER', contactNumber: '' });
-  const [showPw,  setShowPw]  = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
+  const [error, setError] = useState('');
+  const [verificationSent, setVerificationSent] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
+      const isCvsu = form.email.endsWith('@cvsu.edu.ph');
       await register(form);
-      navigate('/');
+      if (isCvsu) {
+        setVerificationSent(true);
+      } else {
+        navigate('/');
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -117,11 +159,25 @@ export function Register() {
 
   const isCvsu = form.email.endsWith('@cvsu.edu.ph');
 
+  if (verificationSent) {
+    return (
+      <AuthLayout title="Check your email" sub="One more step to verify your CvSU account">
+        <div className="bg-cav-green-accent/15 border border-cav-green-accent/30 text-cav-green text-sm rounded-xl px-4 py-4 mb-4">
+          <p className="font-bold mb-1">📧 Verification email sent!</p>
+          <p>We sent a verification link to <strong>{form.email}</strong>. Click the link in your email to activate your CvSU Verified badge.</p>
+        </div>
+        <button onClick={() => navigate('/')} className="btn-primary w-full justify-center py-3">
+          Continue to CavSulit
+        </button>
+      </AuthLayout>
+    );
+  }
+
   return (
     <AuthLayout title="Create account" sub="Join the CavSulit campus community">
       {isCvsu && form.studentId && (
         <div className="bg-cav-green-accent/15 border border-cav-green-accent/30 text-cav-green text-xs rounded-xl px-4 py-3 mb-4 font-semibold">
-          ✅ CvSU email detected — you'll get the CvSU Verified badge automatically!
+          ✅ CvSU email detected — verify your email to get the CvSU Verified badge!
         </div>
       )}
       {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 mb-4">{error}</div>}
