@@ -151,7 +151,13 @@ export function Register() {
         navigate('/');
       }
     } catch (err) {
-      setError(err.message || 'Registration failed');
+      if (err.code === 'auth/email-already-in-use') {
+  setError('This email is already registered. Please sign in instead.');
+        } else if (err.message?.includes('Network Error')) {
+          setError('Server is waking up, please try again in 30 seconds.');
+        } else {
+          setError(err.message || 'Registration failed');
+        }
     } finally {
       setLoading(false);
     }
