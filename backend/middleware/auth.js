@@ -34,5 +34,17 @@ const requireCvsu = (req, res, next) => {
   }
   next();
 };
-
-module.exports = { protect, requireCvsu };
+const optionalAuth = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return next();
+    const decoded = await admin.auth().verifyIdToken(token);
+    const email = decoded.email;
+    let user = await User.findOne({ where: { email } });
+    req.user = user;
+    next();
+  } catch (err) {
+    next();
+  }
+};
+module.exports = { protect, requireCvsu, optionalAuth };
