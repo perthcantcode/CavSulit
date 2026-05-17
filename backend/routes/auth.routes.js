@@ -54,4 +54,14 @@ router.put('/me', protect, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+// TEMPORARY - delete after use
+router.delete('/clear-all-users', async (req, res) => {
+  try {
+    await User.destroy({ where: {}, truncate: true });
+    res.json({ message: 'All users deleted' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
