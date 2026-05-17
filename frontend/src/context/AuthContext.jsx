@@ -17,7 +17,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const result = await signInWithEmailAndPassword(auth, email, password);
-    const token = await result.user.getIdToken();
+    const token = await result.user.getIdToken(true); // force refresh
     localStorage.setItem('cavsulit_token', token);
     const { data } = await api.get('/auth/me');
     localStorage.setItem('cavsulit_user', JSON.stringify(data));
@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
 
   const loginWithGoogle = async () => {
     const result = await signInWithPopup(auth, googleProvider);
-    const token = await result.user.getIdToken();
+    const token = await result.user.getIdToken(true);
     localStorage.setItem('cavsulit_token', token);
     const { data } = await api.get('/auth/me');
     localStorage.setItem('cavsulit_user', JSON.stringify(data));
@@ -40,12 +40,21 @@ export function AuthProvider({ children }) {
     if (form.email.endsWith('@cvsu.edu.ph')) {
       await sendEmailVerification(result.user);
     }
-    const token = await result.user.getIdToken();
+    const token = await result.user.getIdToken(true);
     localStorage.setItem('cavsulit_token', token);
     const { data } = await api.post('/auth/register', form);
     localStorage.setItem('cavsulit_user', JSON.stringify(data));
     setUser(data);
     return data;
+  };
+
+  const resendVerification = async () => {
+    const currentUser = auth.currentUser;
+    if (currentUser && !currentUser.emailVerified) {
+      await sendEmailVerification(currentUser);
+      return true;
+    }
+    return false;
   };
 
   const logout = async () => {
@@ -61,7 +70,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, register, logout, updateUser, resendVerification }}>
       {children}
     </AuthContext.Provider>
   );

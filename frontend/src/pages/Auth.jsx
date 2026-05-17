@@ -51,13 +51,15 @@ function AuthLayout({ title, sub, children }) {
 }
 
 export function Login() {
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, resendVerification } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showResend, setShowResend] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -67,7 +69,17 @@ export function Login() {
       await login(form.email, form.password);
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Login failed');
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+        setError('Invalid email or password.');
+      } else if (err.code === 'auth/user-not-found') {
+        setError('No account found with this email.');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many attempts. Please try again later.');
+      } else {
+        setError(err.message || 'Login failed');
+      }
+      // Show resend option if email not verified
+      if (err.code === 'auth/unverified-email') setShowResend(true);
     } finally {
       setLoading(false);
     }
@@ -80,16 +92,43 @@ export function Login() {
       await loginWithGoogle();
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Google sign-in failed');
+      if (err.code === 'auth/popup-closed-by-user') {
+        setError('Sign-in popup was closed. Please try again.');
+      } else {
+        setError(err.message || 'Google sign-in failed');
+      }
     } finally {
       setGoogleLoading(false);
     }
   };
 
+  const handleResend = async () => {
+    try {
+      await resendVerification();
+      setResendSuccess(true);
+    } catch (err) {
+      setError('Could not resend verification email. Please log in first.');
+    }
+  };
+
   return (
     <AuthLayout title="Welcome back" sub="Sign in to your CavSulit account">
-      {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 mb-4">{error}</div>}
-      
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 mb-4">
+          {error}
+          {showResend && (
+            <button onClick={handleResend} className="block mt-2 text-cav-green font-semibold underline text-xs">
+              Resend verification email
+            </button>
+          )}
+        </div>
+      )}
+      {resendSuccess && (
+        <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3 mb-4">
+          ✅ Verification email sent! Check your spam folder.
+        </div>
+      )}
+
       <button onClick={handleGoogle} disabled={googleLoading}
         className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition mb-4">
         <GoogleIcon/>
@@ -122,7 +161,11 @@ export function Login() {
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
       </form>
-      <p className="text-sm text-center mt-6 text-cav-text-muted">
+      <p className="text-sm text-center mt-4 text-cav-text-muted">
+        Didn't receive verification email?{' '}
+        <button onClick={handleResend} className="text-cav-green font-semibold hover:underline">Resend it</button>
+      </p>
+      <p className="text-sm text-center mt-2 text-cav-text-muted">
         Don't have an account? <Link to="/register" className="text-cav-green font-semibold hover:underline">Sign Up</Link>
       </p>
     </AuthLayout>
@@ -152,12 +195,14 @@ export function Register() {
       }
     } catch (err) {
       if (err.code === 'auth/email-already-in-use') {
-  setError('This email is already registered. Please sign in instead.');
-        } else if (err.message?.includes('Network Error')) {
-          setError('Server is waking up, please try again in 30 seconds.');
-        } else {
-          setError(err.message || 'Registration failed');
-        }
+        setError('This email is already registered. Please sign in instead.');
+      } else if (err.message?.includes('Network Error') || err.message?.includes('waking')) {
+        setError('Server is waking up, please try again in 30 seconds.');
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError(err.message || 'Registration failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -165,23 +210,23 @@ export function Register() {
 
   const isCvsu = form.email.endsWith('@cvsu.edu.ph');
 
-if (verificationSent) {
-return (
-  <AuthLayout title="Check your email" sub="One more step to verify your CvSU account">
-    <div className="bg-cav-green-accent/15 border border-cav-green-accent/30 text-cav-green text-sm rounded-xl px-4 py-4 mb-4">
-      <p className="font-bold mb-1">📧 Verification email sent!</p>
-      <p>We sent a verification link to <strong>{form.email}</strong>. Click the link in your email to activate your CvSU Verified badge.</p>
-    </div>
-    <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 text-sm rounded-xl px-4 py-3 mb-4">
-      <p className="font-bold mb-1">⚠️ Important!</p>
-      <p>After clicking the verification link in your email, come back and <strong>log in again</strong> to activate your CvSU Verified badge.</p>
-    </div>
-    <button onClick={() => navigate('/login')} className="btn-primary w-full justify-center py-3">
-      Go to Login
-    </button>
-  </AuthLayout>
-);
-}
+  if (verificationSent) {
+    return (
+      <AuthLayout title="Check your email" sub="One more step to verify your CvSU account">
+        <div className="bg-cav-green-accent/15 border border-cav-green-accent/30 text-cav-green text-sm rounded-xl px-4 py-4 mb-4">
+          <p className="font-bold mb-1">📧 Verification email sent!</p>
+          <p>We sent a verification link to <strong>{form.email}</strong>. Check your <strong>spam folder</strong> too!</p>
+        </div>
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 text-sm rounded-xl px-4 py-3 mb-4">
+          <p className="font-bold mb-1">⚠️ Important!</p>
+          <p>After clicking the verification link, come back and <strong>log in</strong> to activate your CvSU Verified badge.</p>
+        </div>
+        <button onClick={() => navigate('/login')} className="btn-primary w-full justify-center py-3">
+          Go to Login
+        </button>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout title="Create account" sub="Join the CavSulit campus community">

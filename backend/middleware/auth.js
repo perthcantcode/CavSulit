@@ -21,6 +21,12 @@ const isCvsu = email?.endsWith('@cvsu.edu.ph') && decoded.email_verified;
       });
     }
 
+    // Update isCvsuVerified if email is now verified in Firebase para makapag post ng shop w badge
+if (user && isCvsu && decoded.email_verified && !user.isCvsuVerified) {
+  await user.update({ isCvsuVerified: true, badgeLevel: 'cvsu' });
+  user.isCvsuVerified = true;
+}
+
     req.user = user;
     next();
   } catch (err) {
