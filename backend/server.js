@@ -11,22 +11,32 @@ const server = http.createServer(app);
 
 // Socket.io for real-time messaging
 const io = new Server(server, {
-  cors: { origin: process.env.CLIENT_URL || 'http://localhost:5173', methods: ['GET','POST'] }
-});
-
-io.on('connection', socket => {
-  socket.on('join', userId => socket.join(userId));
-  socket.on('send_message', ({ to, message }) => io.to(to).emit('receive_message', message));
-  socket.on('disconnect', () => {});
+  cors: { 
+    origin: function(origin, callback) {
+      if (!origin || origin.endsWith('.vercel.app') || origin === 'http://localhost:5173') {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET','POST'] 
+  }
 });
 
 // Middleware
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'https://cav-sulit.vercel.app',
-    process.env.CLIENT_URL
-  ],
+  origin: function(origin, callback) {
+    const allowed = [
+      'http://localhost:5173',
+      'https://cav-sulit.vercel.app',
+    ];
+    // Allow all vercel preview deployments
+    if (!origin || allowed.includes(origin) || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
