@@ -8,7 +8,9 @@ const protect = async (req, res, next) => {
 
     const decoded = await admin.auth().verifyIdToken(token);
     const email = decoded.email;
-const isCvsu = email?.endsWith('@cvsu.edu.ph') && decoded.email_verified;
+    const isCvsuEmail = email?.endsWith('@cvsu.edu.ph');
+    const isVerified = decoded.email_verified;
+    const isCvsu = isCvsuEmail && isVerified;
 
     let user = await User.findOne({ where: { email } });
     if (!user) {
@@ -16,16 +18,24 @@ const isCvsu = email?.endsWith('@cvsu.edu.ph') && decoded.email_verified;
         id: decoded.uid,
         email,
         fullName: decoded.name || email.split('@')[0],
-        badgeLevel: isCvsu ? 'cvsu' : 'none',
-        isCvsuVerified: isCvsu,
+        badgeLevel: 'none',
+        isCvsuVerified: false,
       });
     }
 
-    // Update isCvsuVerified if email is now verified in Firebase para makapag post ng shop w badge
-if (user && isCvsu && decoded.email_verified && !user.isCvsuVerified) {
-  await user.update({ isCvsuVerified: true, badgeLevel: 'cvsu' });
-  user.isCvsuVerified = true;
-}
+    // Update badge when Firebase confirms email is verified
+    if (user && isCvsu && !user.isCvsuVerified) {
+      await user.update({ isCvsuVerified: true, badgeLevel: 'cvsu' });
+      user.isCvsuVerified = true;
+      user.badgeLevel = 'cvsu';
+    }
+
+    // Remove badge if email is no longer verified
+    if (user && isCvsuEmail && !isVerified && user.isCvsuVerified) {
+      await user.update({ isCvsuVerified: false, badgeLevel: 'none' });
+      user.isCvsuVerified = false;
+      user.badgeLevel = 'none';
+    }
 
     req.user = user;
     next();
@@ -40,6 +50,7 @@ const requireCvsu = (req, res, next) => {
   }
   next();
 };
+
 const optionalAuth = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -53,4 +64,5 @@ const optionalAuth = async (req, res, next) => {
     next();
   }
 };
+
 module.exports = { protect, requireCvsu, optionalAuth };

@@ -18,11 +18,12 @@ router.post('/register', async (req, res) => {
       fullName, email,
       password: await bcrypt.hash(password, 10),
       studentId, department: department || 'OTHER', contactNumber,
-      isVerified: isCvsu,
-      badgeLevel: isCvsu && studentId ? 'cvsu' : 'none',
+      isVerified: false,
+      badgeLevel: 'none',
+      isCvsuVerified: false,
       role: 'seller',
     });
-    res.status(201).json({ token: sign(user), user: safe(user) });
+    res.status(201).json({ token: sign(user),  user: safe(user) });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
