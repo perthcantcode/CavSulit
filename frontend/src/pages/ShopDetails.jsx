@@ -13,7 +13,7 @@ function ImageCarousel({ imgs, shopName, category }) {
   if (!imgs || imgs.length === 0) {
     return (
       <div className="rounded-2xl overflow-hidden h-72 bg-gradient-to-br from-cav-green-accent/20 to-cav-green-accent/5 flex items-center justify-center">
-        <span className="text-7xl">{CAT_ICONS[category] || 'X'}</span>
+        <span className="text-7xl">{CAT_ICONS[category] || '🛒'}</span>
       </div>
     );
   }
@@ -85,19 +85,44 @@ export function ShopDetails() {
       setReviewComment('');
       setTab('reviews');
     } catch (err) {
-      alert(err.response?.data?.message || 'Error');
+      alert(err.response?.data?.message || 'Error submitting review');
     } finally { setSubmitting(false); }
   };
 
+  // FIX: preorder now also sends a message to the seller's inbox so they always get notified,
+  // regardless of which entry point (info tab, reviews tab, or sidebar button) was used.
   const submitPreorder = async (e) => {
     e.preventDefault();
     if (!user) return navigate('/login');
     setSubmitting(true);
     try {
-      await api.post('/preorders', { shopId: id, items: [{ name: preItems, qty: 1 }], pickupTime: preTime, locationNote: preLocation });
+      // 1. Create the preorder record
+      await api.post('/preorders', {
+        shopId: id,
+        items: [{ name: preItems, qty: 1 }],
+        pickupTime: preTime,
+        locationNote: preLocation,
+      });
+
+      // 2. Send a message to the seller so it appears in their inbox
+      if (shop?.seller?.id) {
+        const msgLines = [
+          `🛒 Pre-Order Request for "${shop.name}"`,
+          `Items: ${preItems}`,
+          preTime       ? `Pickup time: ${preTime}` : '',
+          preLocation   ? `Pickup location: ${preLocation}` : '',
+        ].filter(Boolean).join('\n');
+
+        await api.post('/messages', {
+          receiverId: shop.seller.id,
+          shopId: id,
+          text: msgLines,
+        });
+      }
+
       setPreSuccess(true);
     } catch (err) {
-      alert(err.response?.data?.message || 'Error');
+      alert(err.response?.data?.message || 'Error sending pre-order');
     } finally { setSubmitting(false); }
   };
 
@@ -143,7 +168,7 @@ export function ShopDetails() {
                       <div key={p.id} className="border border-cav-green-accent/20 rounded-xl p-3 text-center">
                         {p.image && <img src={photoUrl(p.image) || ''} alt={p.name} className="w-full h-16 object-cover rounded-lg mb-2"/>}
                         <div className="text-xs font-bold text-cav-green-dark line-clamp-1">{p.name}</div>
-                        <div className="text-sm font-bold text-cav-green mt-1">P{parseFloat(p.price).toFixed(2)}</div>
+                        <div className="text-sm font-bold text-cav-green mt-1">₱{parseFloat(p.price).toFixed(2)}</div>
                         {!p.isAvailable && <div className="text-xs text-red-400 mt-1">Unavailable</div>}
                       </div>
                     ))}
@@ -163,7 +188,7 @@ export function ShopDetails() {
                       {[1,2,3,4,5].map(n => (
                         <button key={n} type="button" onClick={() => setReviewStars(n)}
                           className={'text-2xl transition-transform hover:scale-110 ' + (n <= reviewStars ? 'text-yellow-400' : 'text-gray-200')}>
-                          {String.fromCharCode(9733)}
+                          ★
                         </button>
                       ))}
                     </div>
@@ -203,8 +228,13 @@ export function ShopDetails() {
                 <div className="text-center py-8">
                   <div className="text-4xl mb-3">✅</div>
                   <div className="font-bold text-cav-green-dark">Pre-order sent!</div>
-                  <div className="text-sm text-cav-text-muted mt-1">The seller will confirm via Messages.</div>
-                  <button onClick={() => setPreSuccess(false)} className="btn-secondary mt-4">New Pre-Order</button>
+                  <div className="text-sm text-cav-text-muted mt-1">The seller has been notified via Messages.</div>
+                  <div className="flex gap-2 justify-center mt-4">
+                    <button onClick={() => setPreSuccess(false)} className="btn-secondary">New Pre-Order</button>
+                    <button onClick={() => navigate('/messages?to=' + shop.seller?.id + '&shopId=' + id)} className="btn-primary">
+                      <MessageCircle size={14}/> View in Messages
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={submitPreorder} className="space-y-3">

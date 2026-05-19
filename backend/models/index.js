@@ -81,6 +81,17 @@ const Analytics = sequelize.define('Analytics', {
   date:   { type: DataTypes.DATEONLY, defaultValue: DataTypes.NOW },
 }, { tableName: 'analytics', timestamps: true });
 
+// FIX: ShopView table for persistent 24-hour unique view tracking.
+// Replaces the in-memory Map in shop.routes.js which resets when Render spins down.
+// Stores one row per user+shop combo with the timestamp of their last view.
+const ShopView = sequelize.define('ShopView', {
+  id:           { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  shopId:       { type: DataTypes.UUID, allowNull: false },
+  // viewerKey: userId for logged-in users, hashed IP for guests
+  viewerKey:    { type: DataTypes.STRING(100), allowNull: false },
+  lastViewedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+}, { tableName: 'shop_views', timestamps: false });
+
 // Associations
 Shop.belongsTo(User,     { foreignKey: 'userId',    as: 'seller' });
 User.hasMany(Shop,       { foreignKey: 'userId',    as: 'shops' });
@@ -96,5 +107,6 @@ Wishlist.belongsTo(Shop, { foreignKey: 'shopId',    as: 'shop' });
 Message.belongsTo(User,  { foreignKey: 'senderId',  as: 'sender' });
 Message.belongsTo(User,  { foreignKey: 'receiverId',as: 'receiver' });
 Analytics.belongsTo(Shop,{ foreignKey: 'shopId',    as: 'shop' });
+ShopView.belongsTo(Shop, { foreignKey: 'shopId',    as: 'shop' });
 
-module.exports = { sequelize, User, Shop, Product, Message, Review, PreOrder, Wishlist, Analytics };
+module.exports = { sequelize, User, Shop, Product, Message, Review, PreOrder, Wishlist, Analytics, ShopView };

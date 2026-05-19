@@ -1,41 +1,29 @@
-const router = require('express').Router();
+const router  = require('express').Router();
 const { Op }  = require('sequelize');
-const { Shop, Product, User, Review } = require('../models');
+const { Shop, Product, User, Review, Analytics, ShopView } = require('../models');
 const { protect, optionalAuth, requireCvsu } = require('../middleware/auth');
-const upload = require('../middleware/upload');
+const upload  = require('../middleware/upload');
 
-// In-memory view tracking: "userId_or_ip:shopId" → timestamp of first view
-// This resets on server restart which is fine — Render spins down after inactivity anyway.
-// For persistent deduplication, you'd use Redis or a ShopViews DB table.
-const recentViews = new Map();
 const VIEW_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-function getViewerKey(req, shopId) {
-  // Prefer authenticated user ID; fall back to IP address for guests
-  const identifier = req.user?.id || req.ip || 'unknown';
-  return `${identifier}:${shopId}`;
-}
+// FIX: persistent unique-view check using the ShopView DB table instead of
+// in-memory Map. Works correctly even when Render spins down and restarts.
+async function isUniqueView(req, shopId) {
+  const viewerKey = req.user?.id || req.ip || 'unknown';
+  const cutoff    = new Date(Date.now() - VIEW_WINDOW_MS);
 
-function isUniqueView(req, shopId) {
-  const key = getViewerKey(req, shopId);
-  const lastViewed = recentViews.get(key);
-  const now = Date.now();
-  if (lastViewed && now - lastViewed < VIEW_WINDOW_MS) {
-    return false; // same user/IP viewed this shop within 24h — don't count
-  }
-  recentViews.set(key, now);
+  const existing = await ShopView.findOne({
+    where: { shopId, viewerKey, lastViewedAt: { [Op.gte]: cutoff } },
+  });
+
+  if (existing) return false; // viewed within 24h — don't count
+
+  // Upsert: update timestamp if row exists (older than 24h), else create new row
+  await ShopView.upsert({ shopId, viewerKey, lastViewedAt: new Date() });
   return true;
 }
 
-// Periodically clean up old entries so the Map doesn't grow forever
-setInterval(() => {
-  const cutoff = Date.now() - VIEW_WINDOW_MS;
-  for (const [key, ts] of recentViews.entries()) {
-    if (ts < cutoff) recentViews.delete(key);
-  }
-}, 60 * 60 * 1000); // clean every hour
-
-// GET /api/shops  — browse + filter
+// GET /api/shops
 router.get('/', optionalAuth, async (req, res) => {
   try {
     const { category, college, search, sort = 'recent', page = 1, limit = 8 } = req.query;
@@ -74,7 +62,6 @@ router.get('/mine', protect, async (req, res) => {
 });
 
 // GET /api/shops/:id
-// FIX: Only increments views once per user (or IP for guests) per 24-hour window
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const shop = await Shop.findByPk(req.params.id, {
@@ -86,9 +73,11 @@ router.get('/:id', optionalAuth, async (req, res) => {
     });
     if (!shop) return res.status(404).json({ message: 'Shop not found' });
 
-    // Only count this as a view if it's unique within 24 hours
-    if (isUniqueView(req, req.params.id)) {
+    // FIX: DB-backed unique view — survives server restarts
+    const unique = await isUniqueView(req, req.params.id);
+    if (unique) {
       await shop.increment('views');
+      await Analytics.create({ shopId: req.params.id, type: 'view', date: new Date() });
     }
 
     const avg = shop.reviews?.length ? (shop.reviews.reduce((a,r)=>a+r.stars,0)/shop.reviews.length).toFixed(1) : null;
@@ -101,7 +90,12 @@ router.post('/', protect, requireCvsu, upload.array('photos', 5), async (req, re
   try {
     const { name, description, category, college, locationDesc, lat, lng, availableDate } = req.body;
     const photos = req.files ? req.files.map(f => f.path) : [];
-    const shop = await Shop.create({ userId: req.user.id, name, description, category: category||'other', college: college||'Other', locationDesc, lat: lat||null, lng: lng||null, photos, availableDate: availableDate||null });
+    const shop   = await Shop.create({
+      userId: req.user.id, name, description,
+      category: category || 'other', college: college || 'Other',
+      locationDesc, lat: lat || null, lng: lng || null,
+      photos, availableDate: availableDate || null,
+    });
     res.status(201).json(shop);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });

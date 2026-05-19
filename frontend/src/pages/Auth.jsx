@@ -58,12 +58,14 @@ export function Login() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
+  // FIX: only show resend when Firebase explicitly says email is not verified
   const [showResend, setShowResend] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
     setError('');
+    setShowResend(false);
     setLoading(true);
     try {
       await login(form.email, form.password);
@@ -75,11 +77,13 @@ export function Login() {
         setError('No account found with this email.');
       } else if (err.code === 'auth/too-many-requests') {
         setError('Too many attempts. Please try again later.');
+      } else if (err.code === 'auth/unverified-email') {
+        // FIX: only show resend button if Firebase confirms email is not verified
+        setError('Please verify your email before logging in.');
+        setShowResend(true);
       } else {
         setError(err.message || 'Login failed');
       }
-      // Show resend option if email not verified
-      if (err.code === 'auth/unverified-email') setShowResend(true);
     } finally {
       setLoading(false);
     }
@@ -106,8 +110,9 @@ export function Login() {
     try {
       await resendVerification();
       setResendSuccess(true);
-    } catch (err) {
-      setError('Could not resend verification email. Please log in first.');
+      setShowResend(false);
+    } catch {
+      setError('Could not resend. Please try logging in first so Firebase knows your account.');
     }
   };
 
@@ -116,6 +121,7 @@ export function Login() {
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 mb-4">
           {error}
+          {/* FIX: resend button only appears when showResend is true (unverified email error) */}
           {showResend && (
             <button onClick={handleResend} className="block mt-2 text-cav-green font-semibold underline text-xs">
               Resend verification email
@@ -125,7 +131,7 @@ export function Login() {
       )}
       {resendSuccess && (
         <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3 mb-4">
-          ✅ Verification email sent! Check your spam folder.
+          ✅ Verification email sent! Check your inbox and spam folder.
         </div>
       )}
 
@@ -161,11 +167,8 @@ export function Login() {
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
       </form>
+      {/* FIX: removed the always-visible resend link at the bottom — it was showing for everyone */}
       <p className="text-sm text-center mt-4 text-cav-text-muted">
-        Didn't receive verification email?{' '}
-        <button onClick={handleResend} className="text-cav-green font-semibold hover:underline">Resend it</button>
-      </p>
-      <p className="text-sm text-center mt-2 text-cav-text-muted">
         Don't have an account? <Link to="/register" className="text-cav-green font-semibold hover:underline">Sign Up</Link>
       </p>
     </AuthLayout>
@@ -210,16 +213,22 @@ export function Register() {
 
   const isCvsu = form.email.endsWith('@cvsu.edu.ph');
 
+  // FIX: verification sent screen — spam notice added prominently
   if (verificationSent) {
     return (
       <AuthLayout title="Check your email" sub="One more step to verify your CvSU account">
-        <div className="bg-cav-green-accent/15 border border-cav-green-accent/30 text-cav-green text-sm rounded-xl px-4 py-4 mb-4">
+        <div className="bg-cav-green-accent/15 border border-cav-green-accent/30 text-cav-green text-sm rounded-xl px-4 py-4 mb-3">
           <p className="font-bold mb-1">📧 Verification email sent!</p>
-          <p>We sent a verification link to <strong>{form.email}</strong>. Check your <strong>spam folder</strong> too!</p>
+          <p>We sent a link to <strong>{form.email}</strong>.</p>
         </div>
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 text-sm rounded-xl px-4 py-3 mb-4">
-          <p className="font-bold mb-1">⚠️ Important!</p>
-          <p>After clicking the verification link, come back and <strong>log in</strong> to activate your CvSU Verified badge.</p>
+        {/* FIX: prominent spam folder notice */}
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm rounded-xl px-4 py-3 mb-3">
+          <p className="font-bold mb-1">📁 Not in your inbox?</p>
+          <p>Check your <strong>Spam</strong> or <strong>Junk</strong> folder — verification emails sometimes land there.</p>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-xl px-4 py-3 mb-4">
+          <p className="font-bold mb-1">⚠️ After verifying:</p>
+          <p>Come back and <strong>log in</strong> to activate your CvSU Verified badge.</p>
         </div>
         <button onClick={() => navigate('/login')} className="btn-primary w-full justify-center py-3">
           Go to Login
