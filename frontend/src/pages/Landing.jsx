@@ -3,12 +3,16 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Search, MapPin, Star, MessageCircle, Store, ShieldCheck } from 'lucide-react';
 import api from '../utils/api';
 import { ShopCard } from '../components/ShopCard';
+import { useAuth } from '../context/AuthContext';
 
 export function Landing() {
+  const { user }  = useAuth();
   const [recent,  setRecent]  = useState([]);
   const [popular, setPopular] = useState([]);
   const [search,  setSearch]  = useState('');
   const [loading, setLoading] = useState(true);
+  // FIX: track saved state here so ShopCards on landing page show correct heart state
+  const [saved,   setSaved]   = useState(new Set());
 
   useEffect(() => {
     Promise.all([
@@ -19,6 +23,22 @@ export function Landing() {
       setPopular(p.data.shops || []);
     }).finally(() => setLoading(false));
   }, []);
+
+  // FIX: load the user's wishlist so hearts show filled correctly on landing page
+  useEffect(() => {
+    if (!user) return;
+    api.get('/wishlist')
+      .then(({ data }) => setSaved(new Set(data.map(item => item.shopId))))
+      .catch(() => {});
+  }, [user]);
+
+  const handleSaveToggle = (id, isSaved) => {
+    setSaved(prev => {
+      const n = new Set(prev);
+      isSaved ? n.add(id) : n.delete(id);
+      return n;
+    });
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -113,7 +133,8 @@ export function Landing() {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {recent.map(s => <ShopCard key={s.id} shop={s}/>)}
+              {/* FIX: pass saved state and toggle handler so hearts work on landing page */}
+              {recent.map(s => <ShopCard key={s.id} shop={s} saved={saved.has(s.id)} onSaveToggle={handleSaveToggle}/>)}
             </div>
           )}
         </div>
@@ -130,7 +151,8 @@ export function Landing() {
             <Link to="/browse?sort=popular" className="btn-ghost text-sm"><ArrowRight size={16}/>See all</Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {popular.map(s => <ShopCard key={s.id} shop={s}/>)}
+            {/* FIX: same here for popular shops section */}
+            {popular.map(s => <ShopCard key={s.id} shop={s} saved={saved.has(s.id)} onSaveToggle={handleSaveToggle}/>)}
           </div>
         </div>
       </section>
