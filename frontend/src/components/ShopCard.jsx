@@ -1,15 +1,22 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Eye, Heart } from 'lucide-react';
 import { badgeLabel, CAT_ICONS, photoUrl, stars } from '../utils/helpers';
+import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
 export function ShopCard({ shop, saved = false, onSaveToggle }) {
-  const badge = badgeLabel(shop.seller?.badgeLevel);
-  const img   = shop.photos?.[0] ? photoUrl(shop.photos[0]) : null;
+  const { user }  = useAuth();
+  const navigate  = useNavigate();
+  const badge     = badgeLabel(shop.seller?.badgeLevel);
+  const img       = shop.photos?.[0] ? photoUrl(shop.photos[0]) : null;
 
+  // FIX: stopPropagation prevents the Link from firing when the heart is clicked.
+  // We also redirect to login if not authenticated instead of silently failing.
   const handleSave = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    if (!user) { navigate('/login'); return; }
     try {
       const { data } = await api.post(`/wishlist/${shop.id}`);
       onSaveToggle?.(shop.id, data.saved);
@@ -24,8 +31,14 @@ export function ShopCard({ shop, saved = false, onSaveToggle }) {
           ? <img src={img} alt={shop.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
           : <span className="text-5xl">{CAT_ICONS[shop.category] || '🛒'}</span>
         }
-        <button onClick={handleSave}
-          className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
+        {/* FIX: using onMouseDown instead of onClick as a secondary guard so the
+            Link's onClick never fires first on fast taps */}
+        <button
+          onClick={handleSave}
+          onMouseDown={e => e.stopPropagation()}
+          className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-transform z-10"
+          aria-label={saved ? 'Remove from wishlist' : 'Save to wishlist'}
+        >
           <Heart size={14} className={saved ? 'text-red-500 fill-red-500' : 'text-gray-400'}/>
         </button>
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-3 py-2">

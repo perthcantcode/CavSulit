@@ -34,6 +34,17 @@ export function Browse() {
   useEffect(() => { load(); }, [category, college, search, sort, page]);
   useEffect(() => { setPage(1); }, [category, college, search, sort]);
 
+  // FIX: Load the user's saved wishlist on mount so heart icons show correctly
+  useEffect(() => {
+    if (!user) return;
+    api.get('/wishlist')
+      .then(({ data }) => {
+        const ids = new Set(data.map(item => item.shopId));
+        setSaved(ids);
+      })
+      .catch(() => {});
+  }, [user]);
+
   const handleSaveToggle = (id, isSaved) => {
     setSaved(prev => {
       const n = new Set(prev);

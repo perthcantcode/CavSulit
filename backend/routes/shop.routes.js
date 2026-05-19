@@ -4,6 +4,37 @@ const { Shop, Product, User, Review } = require('../models');
 const { protect, optionalAuth, requireCvsu } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
+// In-memory view tracking: "userId_or_ip:shopId" → timestamp of first view
+// This resets on server restart which is fine — Render spins down after inactivity anyway.
+// For persistent deduplication, you'd use Redis or a ShopViews DB table.
+const recentViews = new Map();
+const VIEW_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function getViewerKey(req, shopId) {
+  // Prefer authenticated user ID; fall back to IP address for guests
+  const identifier = req.user?.id || req.ip || 'unknown';
+  return `${identifier}:${shopId}`;
+}
+
+function isUniqueView(req, shopId) {
+  const key = getViewerKey(req, shopId);
+  const lastViewed = recentViews.get(key);
+  const now = Date.now();
+  if (lastViewed && now - lastViewed < VIEW_WINDOW_MS) {
+    return false; // same user/IP viewed this shop within 24h — don't count
+  }
+  recentViews.set(key, now);
+  return true;
+}
+
+// Periodically clean up old entries so the Map doesn't grow forever
+setInterval(() => {
+  const cutoff = Date.now() - VIEW_WINDOW_MS;
+  for (const [key, ts] of recentViews.entries()) {
+    if (ts < cutoff) recentViews.delete(key);
+  }
+}, 60 * 60 * 1000); // clean every hour
+
 // GET /api/shops  — browse + filter
 router.get('/', optionalAuth, async (req, res) => {
   try {
@@ -43,6 +74,7 @@ router.get('/mine', protect, async (req, res) => {
 });
 
 // GET /api/shops/:id
+// FIX: Only increments views once per user (or IP for guests) per 24-hour window
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const shop = await Shop.findByPk(req.params.id, {
@@ -53,14 +85,20 @@ router.get('/:id', optionalAuth, async (req, res) => {
       ],
     });
     if (!shop) return res.status(404).json({ message: 'Shop not found' });
-    await shop.increment('views');
+
+    // Only count this as a view if it's unique within 24 hours
+    if (isUniqueView(req, req.params.id)) {
+      await shop.increment('views');
+    }
+
     const avg = shop.reviews?.length ? (shop.reviews.reduce((a,r)=>a+r.stars,0)/shop.reviews.length).toFixed(1) : null;
     res.json({ ...shop.toJSON(), avgRating: avg, reviewCount: shop.reviews?.length || 0 });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 // POST /api/shops
-router.post('/', protect, requireCvsu, upload.array('photos', 5), async (req, res) => {  try {
+router.post('/', protect, requireCvsu, upload.array('photos', 5), async (req, res) => {
+  try {
     const { name, description, category, college, locationDesc, lat, lng, availableDate } = req.body;
     const photos = req.files ? req.files.map(f => f.path) : [];
     const shop = await Shop.create({ userId: req.user.id, name, description, category: category||'other', college: college||'Other', locationDesc, lat: lat||null, lng: lng||null, photos, availableDate: availableDate||null });
