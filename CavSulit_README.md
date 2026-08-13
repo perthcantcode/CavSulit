@@ -30,7 +30,7 @@
 
 CavSulit is a free campus marketplace built for every student, instructor, and member of the CvSU community who has something to offer but nowhere to show it. Behind every hallway and classroom are talented entrepreneurs, freelancers, and small business owners whose potential is simply being held back by the lack of a platform. CavSulit bridges that gap — giving everyone inside CvSU a space to promote their products, services, and hustles while helping the community discover, support, and connect with the local talent already surrounding them. Because growth shouldn't depend on where you stand — it should depend on what you offer. The campus is your market. CavSulit is your store.
 
-**Live URL:** https://cav-sulit.vercel.app
+**Live URL:** [https://cav-sulit.vercel.app](https://cavsulit-v2-frontend.vercel.app/)
 
 **GitHub Repository:** https://github.com/perthcantcode/CavSulit
 
